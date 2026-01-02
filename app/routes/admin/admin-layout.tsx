@@ -1,7 +1,7 @@
 import React from 'react'
 import { Outlet } from 'react-router'
 import { SidebarComponent } from '@syncfusion/ej2-react-navigations'
-import { NavItems,MobileSidebar } from '@components'
+import { NavItems, MobileSidebar } from '@components'
 const AdminLayout = () => {
     return (
         <div className='admin-layout'>

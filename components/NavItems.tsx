@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router'
 import { sidebarItems } from '~/constants'
-const NavItems = () => {
+const NavItems = ({handleClick}: {handleClick?: () => void}) => {
     const user = {
         name: 'anouar',
         email: 'anouar@gmail.com',
@@ -15,7 +15,7 @@ const NavItems = () => {
             <div className='container'>
                 <nav>
                     {sidebarItems.map(({ id, href, icon, label }) => (
-                        <NavLink key={id} to={href}>
+                        <NavLink key={id} to={href} onClick={handleClick}>
                             {({ isActive }: { isActive: boolean }) => (
                                 <div className={`nav-item ${isActive ? 'active' : ''}`}>
                                     <img src={icon} alt={label} />
