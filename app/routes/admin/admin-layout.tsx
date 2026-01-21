@@ -6,7 +6,7 @@ const AdminLayout = () => {
     return (
         <div className='admin-layout'>
             <MobileSidebar />
-            <aside className='w-full max-x-[270px] hidden lg:block'>
+            <aside className='w-[270px] hidden lg:block shrink-0'>
                 <SidebarComponent width={270} enableGestures={true}>
                     <NavItems />
                 </SidebarComponent>
