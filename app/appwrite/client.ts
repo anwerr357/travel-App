@@ -10,6 +10,6 @@ export const appwriteConfig= {
 
 }
 const client = new Client().setEndpoint(appwriteConfig.endpointUrl).setProject(appwriteConfig.projectId);
-const account = new Account(client);
-const database = new Databases(client);
-const storage = new Storage(client); 
+export const account = new Account(client);
+export const database = new Databases(client);
+export const storage = new Storage(client); 
