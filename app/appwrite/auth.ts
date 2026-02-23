@@ -1,15 +1,18 @@
 import { ID, OAuthProvider, Query } from "appwrite";
-import { account, database, appwriteConfig } from "~/appwrite/client";
+import { account, tablesDB, appwriteConfig } from "~/appwrite/client";
 import { redirect } from "react-router";
 
 export const getExistingUser = async (id: string) => {
     try {
-        const { documents, total } = await database.listDocuments(
-            appwriteConfig.databaseID,
-            appwriteConfig.userCollectionId,
-            [Query.equal("accountId", id)]
-        );
-        return total > 0 ? documents[0] : null;
+        const { rows, total } = await tablesDB.listRows({
+            databaseId: appwriteConfig.databaseID,
+            tableId: appwriteConfig.userTableId,
+            queries: [Query.equal("accountId", id)]
+        });
+        console.log('rows: ',rows);
+        console.log('total: ',total);
+
+        return total > 0 ? rows[0] : null;
     } catch (error) {
         console.error("Error fetching user:", error);
         return null;
@@ -17,29 +20,56 @@ export const getExistingUser = async (id: string) => {
 };
 
 export const storeUserData = async () => {
+    let user: { $id: string; email: string; name: string } | null = null;
     try {
-        const user = await account.get();
+        user = await account.get();
         if (!user) throw new Error("User not found");
+
+
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
 
         const { providerAccessToken } = (await account.getSession("current")) || {};
         const profilePicture = providerAccessToken
             ? await getGooglePicture(providerAccessToken)
             : null;
 
-        const createdUser = await database.createDocument(
-            appwriteConfig.databaseID,
-            appwriteConfig.userCollectionId,
-            ID.unique(),
-            {
-                accountId: user.$id,
-                email: user.email,
-                name: user.name,
-                imageUrl: profilePicture,
-                joinedAt: new Date().toISOString(),
-            }
-        );
+        const userData = {
+            accountId: user.$id,
+            email: user.email,
+            name: user.name,
+            ImageUrl: profilePicture,
+            joinedAt: new Date().toISOString(),
+        };
 
-        if (!createdUser.$id) redirect("/sign-in");
+        const existingUser = await getExistingUser(user.$id);
+        
+        if (existingUser) {
+            const updatedUser = await tablesDB.updateRow(
+                appwriteConfig.databaseID,
+                appwriteConfig.userTableId,
+                existingUser.$id,
+                {
+                    email: user.email,
+                    name: user.name,
+                    ImageUrl: profilePicture,
+                }
+            );
+            return updatedUser;
+        }
+
+        const createdUser = await tablesDB.createRow({
+            databaseId: appwriteConfig.databaseID,
+            tableId: appwriteConfig.userTableId,
+            rowId: ID.unique(),
+            data: userData
+        });
+
+        if (!createdUser.$id) {
+            console.error('storeUserData: No document ID returned');
+            redirect("/sign-in");
+        }
+
+        return createdUser;
     } catch (error) {
         console.error("Error storing user data:", error);
     }
@@ -87,16 +117,16 @@ export const getUser = async () => {
         const user = await account.get();
         if (!user) return redirect("/sign-in");
 
-        const { documents } = await database.listDocuments(
-            appwriteConfig.databaseID,
-            appwriteConfig.userCollectionId,
-            [
+        const { rows } = await tablesDB.listRows({
+            databaseId: appwriteConfig.databaseID,
+            tableId: appwriteConfig.userTableId,
+            queries: [
                 Query.equal("accountId", user.$id),
-                Query.select(["name", "email", "imageUrl", "joinedAt", "accountId"]),
+                Query.select(["name", "email", "ImageUrl", "joinedAt", "accountId"]),
             ]
-        );
+        });
 
-        return documents.length > 0 ? documents[0] : redirect("/sign-in");
+        return rows.length > 0 ? rows[0] : redirect("/sign-in");
     } catch (error) {
         console.error("Error fetching user:", error);
         return null;
@@ -105,11 +135,11 @@ export const getUser = async () => {
 
 export const getAllUsers = async (limit: number, offset: number) => {
     try {
-        const { documents: users, total } = await database.listDocuments(
-            appwriteConfig.databaseID,
-            appwriteConfig.userCollectionId,
-            [Query.limit(limit), Query.offset(offset)]
-        )
+        const { rows: users, total } = await tablesDB.listRows({
+            databaseId: appwriteConfig.databaseID,
+            tableId: appwriteConfig.userTableId,
+            queries: [Query.limit(limit), Query.offset(offset)]
+        })
 
         if(total === 0) return { users: [], total };
 

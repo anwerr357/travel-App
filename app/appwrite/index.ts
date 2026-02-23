@@ -1,2 +1,2 @@
-export { account, database, storage, appwriteConfig } from './client';
+export { account, tablesDB, storage, appwriteConfig } from './client';
 export { OAuthProvider } from 'appwrite';

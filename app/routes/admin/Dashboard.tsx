@@ -1,8 +1,32 @@
 import { Header, StatsCard, TripCard } from '@components'
 import { allTrips, dashboardStats, user } from '~/constants';
+import { account } from '~/appwrite/client';
+import { getExistingUser, storeUserData } from '~/appwrite/auth';
+import { redirect } from 'react-router';
 
-  const {totalUsers,usersJoined,totalTrips,tripsCreated,userRole}=dashboardStats;
-;
+export async function clientLoader() {
+  try {
+    const user = await account.get();
+    
+    if (!user) return redirect('/sign-in');
+    
+    const existingUser = await getExistingUser(user.$id);
+    
+    if (!existingUser) {
+      await storeUserData();
+    } else {
+      console.log('User already exists in DB');
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Dashboard loader error:', error);
+    return redirect('/sign-in');
+  }
+}
+
+const {totalUsers,usersJoined,totalTrips,tripsCreated,userRole}=dashboardStats;
+
 const Dashboard = () => {
 
   return (
