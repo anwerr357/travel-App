@@ -12,12 +12,12 @@ const MobileSidebar = () => {
         <div className='mobile-sidebar wrapper'>
             <header>
                 <Link to='/' className='link-logo'>
-                    <img src="assets/icons/logo.svg" alt="logo" className='size-[30px]' />
+                    <img src="/assets/icons/logo.svg" alt="logo" className='size-[30px]' />
                     <h1>Tourvisto Mobile</h1>
                 </Link>
 
                 <button onClick={toggleSidebar}>
-                    <img src="assets/icons/menu.svg" alt="menu"
+                    <img src="/assets/icons/menu.svg" alt="menu"
                         className='size-7' />
                 </button>
             </header>

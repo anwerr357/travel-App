@@ -9,8 +9,6 @@ export const getExistingUser = async (id: string) => {
             tableId: appwriteConfig.userTableId,
             queries: [Query.equal("accountId", id)]
         });
-        console.log('rows: ',rows);
-        console.log('total: ',total);
 
         return total > 0 ? rows[0] : null;
     } catch (error) {
@@ -42,7 +40,7 @@ export const storeUserData = async () => {
         };
 
         const existingUser = await getExistingUser(user.$id);
-        
+
         if (existingUser) {
             const updatedUser = await tablesDB.updateRow(
                 appwriteConfig.databaseID,
@@ -141,7 +139,7 @@ export const getAllUsers = async (limit: number, offset: number) => {
             queries: [Query.limit(limit), Query.offset(offset)]
         })
 
-        if(total === 0) return { users: [], total };
+        if (total === 0) return { users: [], total };
 
         return { users, total };
     } catch (e) {
