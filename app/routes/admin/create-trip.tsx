@@ -6,6 +6,7 @@ import { comboBoxItems, selectItems } from '~/constants';
 import { cn, formatKey } from '~/lib/utils';
 import { LayerDirective, LayersDirective, MapsComponent } from '@syncfusion/ej2-react-maps';
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { world_map } from '~/constants/world_map';
 import { account } from '~/appwrite';
 
@@ -52,6 +53,7 @@ function getFallbackCountries() {
 }
 const createTrip = ({ loaderData }: Route.ComponentProps) => {
     const countries = loaderData as Country[];
+    const navigate = useNavigate();
     const [formatData, setFormData] = useState<TripFormData>({
         country: countries[0]?.value || '',
         travelStyle: '',
@@ -99,11 +101,32 @@ const createTrip = ({ loaderData }: Route.ComponentProps) => {
                 }
             
             console.log('Form data:', formatData);
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Success handling
-            console.log('Trip created successfully');
+            const response = await fetch('/api/create-trip', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    country: formatData.country,
+                    numberOfDays: formatData.duration,
+                    travelStyle: formatData.travelStyle,
+                    interests: formatData.interest,
+                    budget: formatData.budget,
+                    grouptType: formatData.groupType,
+                    userId: user.$id
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to create trip: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            console.log('Trip created successfully:', result);
+            
+            // Navigate to the specific trip page after successful creation
+            navigate(`/trips/${result.id}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create trip');
         } finally {

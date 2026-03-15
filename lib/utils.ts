@@ -11,18 +11,40 @@ export const formatDate = (dateString: string): string => {
 };
 
 export function parseMarkdownToJson(markdownText: string): unknown | null {
-  const regex = /```json\n([\s\S]+?)\n```/;
-  const match = markdownText.match(regex);
-
-  if (match && match[1]) {
+  // Try multiple parsing strategies
+  
+  // Strategy 1: Look for JSON in markdown code blocks
+  const codeBlockRegex = /```(?:json)?\n?([\s\S]+?)\n?```/;
+  const codeBlockMatch = markdownText.match(codeBlockRegex);
+  
+  if (codeBlockMatch && codeBlockMatch[1]) {
     try {
-      return JSON.parse(match[1]);
+      return JSON.parse(codeBlockMatch[1].trim());
     } catch (error) {
-      console.error("Error parsing JSON:", error);
-      return null;
+      console.warn("Failed to parse JSON from code block:", error);
     }
   }
-  console.error("No valid JSON found in markdown text.");
+  
+  // Strategy 2: Look for any JSON-like structure
+  const jsonRegex = /\{[\s\S]*\}/;
+  const jsonMatch = markdownText.match(jsonRegex);
+  
+  if (jsonMatch && jsonMatch[0]) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+      console.warn("Failed to parse JSON from general match:", error);
+    }
+  }
+  
+  // Strategy 3: Try to parse the entire text as JSON (in case it's already JSON)
+  try {
+    return JSON.parse(markdownText.trim());
+  } catch (error) {
+    console.warn("Failed to parse entire text as JSON:", error);
+  }
+  
+  console.error("No valid JSON found in response text. Raw text:", markdownText.substring(0, 500));
   return null;
 }
 
