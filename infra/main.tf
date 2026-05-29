@@ -91,3 +91,14 @@ resource "aws_db_instance" "main" {
   storage_encrypted = true    # CC6.7 — PASS
   skip_final_snapshot = true
 }
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "app_data_sse" {
+  bucket = aws_s3_bucket.app_data.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "aws:kms"
+    }
+    bucket_key_enabled = true
+  }
+}
