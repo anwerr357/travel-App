@@ -1,0 +1,2 @@
+
+export const AWS_SECRET = "AKIAIOSFODNN7EXAMPLE";

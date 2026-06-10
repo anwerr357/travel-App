@@ -48,15 +48,73 @@ export function parseMarkdownToJson(markdownText: string): unknown | null {
   return null;
 }
 
-export function parseTripData(jsonString: string): Trip | null {
+export function parseTripData(tripData: any): Trip | null {
+  if (!tripData) return null;
+  
+  if (typeof tripData === 'string') {
+    try {
+      tripData = JSON.parse(tripData);
+    } catch (error) {
+      console.error("Failed to parse trip data:", error);
+      return null;
+    }
+  }
+  
+  // Transform AI response structure to expected Trip structure
   try {
-    const data: Trip = JSON.parse(jsonString);
-
-    return data;
+    return {
+      id: tripData.id || '',
+      name: tripData.destination || '',
+      country: tripData.destination || '',
+      duration: tripData.duration || 0,
+      travelStyle: tripData.travelStyle || '',
+      groupType: tripData.groupType || '',
+      budget: tripData.budget || '',
+      interests: typeof tripData.interests === 'string' ? tripData.interests : (tripData.interests || []).join(', '),
+      estimatedPrice: tripData.estimatedCost?.totalApproxUSD_per_couple || 
+                      `$${tripData.estimatedCost || (tripData.duration * 100)}`,
+      description: tripData.overview || '',
+      itinerary: transformItinerary(tripData.itinerary || []),
+      bestTimeToVisit: tripData.tips?.filter((tip: any) => 
+        typeof tip === 'string' && tip.includes('Season')
+      ) || ['Check local weather conditions'],
+      weatherInfo: tripData.tips?.filter((tip: any) => 
+        typeof tip === 'string' && tip.includes('Weather')
+      ) || ['Varies by season'],
+      imageUrls: tripData.imageUrls || [],
+      location: {
+        city: tripData.destination || '',
+        coordinates: [0, 0] as [number, number],
+        openStreetMap: ''
+      } as any,
+      payment_link: ''
+    };
   } catch (error) {
-    console.error("Failed to parse trip data:", error);
+    console.error("Failed to transform trip data:", error);
     return null;
   }
+}
+
+// Transform AI itinerary structure to expected format
+function transformItinerary(aiItinerary: any[]): DayPlan[] {
+  return aiItinerary.map((day: any) => ({
+    day: day.day || 1,
+    location: day.location || '',
+    activities: [
+      ...(day.morning ? [{
+        time: day.morning.time || 'Morning',
+        description: day.morning.activity || day.morning.description || day.morning
+      }] : []),
+      ...(day.afternoon ? [{
+        time: day.afternoon.time || 'Afternoon', 
+        description: day.afternoon.activity || day.afternoon.description || day.afternoon
+      }] : []),
+      ...(day.evening ? [{
+        time: day.evening.time || 'Evening',
+        description: day.evening.activity || day.evening.description || day.evening
+      }] : [])
+    ].filter(activity => activity.description)
+  }));
 }
 
 export function getFirstWord(input: string = ""): string {

@@ -107,11 +107,31 @@ IMPORTANT: Return your response as a valid JSON object wrapped in markdown code 
             return await genAi.getGenerativeModel({model:  'gemini-2.5-flash'}).generateContent([prompt]);
         });
         const responseText = textResult.response.text();
-        console.log('RAW AI RESPONSE: ', responseText);
         const trip = parseMarkdownToJson(responseText);
-        console.log('PARSED TRIP: ', trip);
-        const imageResponse = await fetch(`https://api.unsplash.com/search/photos?query=${country} ${interests} ${travelStyle}&client_id=${unsplashApiKey}`);
-        const imageUrls = (await imageResponse.json()).results.slice(0,3).map((result: any)=> result.urls?.regular || null);
+        let imageUrls: string[] = [];
+        try {
+            if (unsplashApiKey) {
+                const imageResponse = await fetch(`https://api.unsplash.com/search/photos?query=${country} travel ${travelStyle}&client_id=${unsplashApiKey}&per_page=3`);
+                if (imageResponse.ok) {
+                    const imageData = await imageResponse.json();
+                    imageUrls = imageData.results
+                        ?.filter((result: any) => result.urls?.regular)
+                        ?.map((result: any) => result.urls.regular)
+                        ?.slice(0, 3) || [];
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to fetch images from Unsplash:', error);
+        }
+        
+        // Fallback to placeholder images if no images found
+        if (imageUrls.length === 0) {
+            imageUrls = [
+                `https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop`,
+                `https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop`,
+                `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop`
+            ];
+        }
         const result = await tablesDB.createRow({
             databaseId: appwriteConfig.databaseID,
             tableId: appwriteConfig.tripTableId,
@@ -143,12 +163,27 @@ IMPORTANT: Return your response as a valid JSON object wrapped in markdown code 
                 // Still fetch images if possible
                 let imageUrls: string[] = [];
                 try {
-                    const imageResponse = await fetch(`https://api.unsplash.com/search/photos?query=${country} ${interests} ${travelStyle}&client_id=${unsplashApiKey}`);
-                    if (imageResponse.ok) {
-                        imageUrls = (await imageResponse.json()).results.slice(0,3).map((result: any) => result.urls?.regular || null);
+                    if (unsplashApiKey) {
+                        const imageResponse = await fetch(`https://api.unsplash.com/search/photos?query=${country} travel ${travelStyle}&client_id=${unsplashApiKey}&per_page=3`);
+                        if (imageResponse.ok) {
+                            const imageData = await imageResponse.json();
+                            imageUrls = imageData.results
+                                ?.filter((result: any) => result.urls?.regular)
+                                ?.map((result: any) => result.urls.regular)
+                                ?.slice(0, 3) || [];
+                        }
                     }
                 } catch (imgError) {
                     console.warn('Failed to fetch images, proceeding without:', imgError);
+                }
+                
+                // Fallback to placeholder images if no images found
+                if (imageUrls.length === 0) {
+                    imageUrls = [
+                        `https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop`,
+                        `https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop`,
+                        `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop`
+                    ];
                 }
                 
                 const result = await tablesDB.createRow({

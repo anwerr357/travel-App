@@ -16,11 +16,14 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
 
     return {
         trip,
-        allTrips: trips.allTrips.map(({ $id, tripDetails, imageUrls }) => ({
-            id: $id,
-            ...parseTripData(tripDetails),
-            imageUrls: imageUrls ?? []
-        }))
+        allTrips: trips.allTrips.map(({ $id, tripDetails, imageUrls }) => {
+            const parsedTrip = parseTripData(tripDetails);
+            return {
+                id: $id,
+                ...parsedTrip,
+                imageUrls: imageUrls && imageUrls.length > 0 ? imageUrls : (parsedTrip?.imageUrls || [])
+            };
+        })
     }
 }
 
@@ -176,7 +179,7 @@ const TripDetail = ({ loaderData }: Route.ComponentProps) => {
                             key={trip.id}
                             id={trip.id}
                             name={trip.name}
-                            imageUrl={trip.imageUrls[0]}
+                            imageUrl={trip.imageUrls?.[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop'}
                             location={trip.itinerary?.[0]?.location ?? ""}
                             tags={[trip.interests, trip.travelStyle]}
                             price={trip.estimatedPrice}
