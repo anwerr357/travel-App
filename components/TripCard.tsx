@@ -6,7 +6,7 @@ import { getFirstWord, cn } from 'lib/utils';
 const TripCard = ({ id, name, location, imageUrl, tags, price }: TripCardProps) => {
   const path = useLocation();
   return (
-    <Link to={`/admin/trip-detail/${id}`} className='trip-card'>
+    <Link to={`/trips/${id}`} className='trip-card'>
       <img src={imageUrl} alt={name} />
       <article>
         <h2>

@@ -1,16 +1,52 @@
 import { Header, StatsCard, TripCard } from '@components'
-import { allTrips, dashboardStats, user } from '~/constants';
+import { dashboardStats } from '~/constants';
 import { account } from '~/appwrite/client';
 import { getExistingUser, getUser, storeUserData } from '~/appwrite/auth';
+import { getAllTrips } from '~/appwrite/trips';
+import { parseTripData } from '~/lib/utils';
 import { redirect } from 'react-router';
 import type { Route } from './+types/Dashboard';
+import type { LoaderFunctionArgs } from "react-router";
 
-export const clientLoader = async () => getUser();
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+    try {
+        // Get user data and recent trips for dashboard
+        const user = await getUser();
+        const { allTrips, total } = await getAllTrips(4, 0);
+        
+        const formattedTrips = allTrips.map(({ $id, tripDetails, imageUrls, $createdAt }) => {
+            const parsedTrip = parseTripData(tripDetails);
+            return {
+                id: $id,
+                ...parsedTrip,
+                imageUrls: imageUrls && imageUrls.length > 0 ? imageUrls : (parsedTrip?.imageUrls || []),
+                createdAt: $createdAt
+            };
+        });
+
+        return {
+            user,
+            recentTrips: formattedTrips,
+            totalTripsCount: total
+        };
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        return {
+            user: null,
+            recentTrips: [],
+            totalTripsCount: 0
+        };
+    }
+};
 
 const { totalUsers, usersJoined, totalTrips, tripsCreated, userRole } = dashboardStats;
 
 const Dashboard = ({ loaderData }: Route.ComponentProps) => {
-  const user = loaderData as User | null;
+  const { user, recentTrips, totalTripsCount } = loaderData as { 
+    user: User | null; 
+    recentTrips: any[]; 
+    totalTripsCount: number; 
+  };
   return (
 
     <main className='dashboard wrapper'>
@@ -30,7 +66,7 @@ const Dashboard = ({ loaderData }: Route.ComponentProps) => {
           />
           <StatsCard
             headerTitle="Total Trips"
-            total={totalTrips}
+            total={totalTripsCount}
             currentMonthCount={tripsCreated.currentMonth}
             lastMonthCount={tripsCreated.lastMonth}
 
@@ -51,21 +87,29 @@ const Dashboard = ({ loaderData }: Route.ComponentProps) => {
             Created Trips
           </h1>
           <div className='trip-grid'>
-            {
-              allTrips.slice(0, 4).map(({ id, name, imageUrls, itinerary, tags, estimatedPrice }) => (
+            {recentTrips.length > 0 ? (
+              recentTrips.map((trip) => (
                 <TripCard
-                  key={id}
-                  id={id.toString()}
-                  name={name}
-                  imageUrl={imageUrls[0]}
-                  location={itinerary?.[0].location ?? ''}
-                  tags={tags}
-                  price={estimatedPrice}
-                >
-
-                </TripCard>
+                  key={trip.id}
+                  id={trip.id}
+                  name={trip.name || 'Untitled Trip'}
+                  imageUrl={trip.imageUrls?.[0] || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=600&fit=crop'}
+                  location={trip.itinerary?.[0]?.location || trip.country || 'Unknown'}
+                  tags={[trip.interests, trip.travelStyle].filter(Boolean) as string[]}
+                  price={trip.estimatedPrice || 'Price TBD'}
+                />
               ))
-            }
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-500 mb-4">No trips created yet</p>
+                <a
+                  href="/trips/create"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+                >
+                  Create Your First Trip
+                </a>
+              </div>
+            )}
           </div>
         </section>
 

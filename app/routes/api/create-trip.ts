@@ -111,17 +111,27 @@ IMPORTANT: Return your response as a valid JSON object wrapped in markdown code 
         let imageUrls: string[] = [];
         try {
             if (unsplashApiKey) {
-                const imageResponse = await fetch(`https://api.unsplash.com/search/photos?query=${country} travel ${travelStyle}&client_id=${unsplashApiKey}&per_page=3`);
+                console.log('Fetching images from Unsplash for query:', `${country} travel ${travelStyle}`);
+                const imageResponse = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(country)} travel ${encodeURIComponent(travelStyle)}&client_id=${unsplashApiKey}&per_page=3`);
+                console.log('Unsplash API response status:', imageResponse.status);
+                
                 if (imageResponse.ok) {
                     const imageData = await imageResponse.json();
+                    console.log('Unsplash API response:', imageData);
                     imageUrls = imageData.results
                         ?.filter((result: any) => result.urls?.regular)
                         ?.map((result: any) => result.urls.regular)
                         ?.slice(0, 3) || [];
+                    console.log('Extracted image URLs:', imageUrls);
+                } else {
+                    const errorText = await imageResponse.text();
+                    console.error('Unsplash API error:', imageResponse.status, errorText);
                 }
+            } else {
+                console.warn('Unsplash API key not provided');
             }
         } catch (error) {
-            console.warn('Failed to fetch images from Unsplash:', error);
+            console.error('Failed to fetch images from Unsplash:', error);
         }
         
         // Fallback to placeholder images if no images found
@@ -164,17 +174,27 @@ IMPORTANT: Return your response as a valid JSON object wrapped in markdown code 
                 let imageUrls: string[] = [];
                 try {
                     if (unsplashApiKey) {
-                        const imageResponse = await fetch(`https://api.unsplash.com/search/photos?query=${country} travel ${travelStyle}&client_id=${unsplashApiKey}&per_page=3`);
+                        console.log('Fallback: Fetching images from Unsplash for query:', `${country} travel ${travelStyle}`);
+                        const imageResponse = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(country)} travel ${encodeURIComponent(travelStyle)}&client_id=${unsplashApiKey}&per_page=3`);
+                        console.log('Fallback: Unsplash API response status:', imageResponse.status);
+                        
                         if (imageResponse.ok) {
                             const imageData = await imageResponse.json();
+                            console.log('Fallback: Unsplash API response:', imageData);
                             imageUrls = imageData.results
                                 ?.filter((result: any) => result.urls?.regular)
                                 ?.map((result: any) => result.urls.regular)
                                 ?.slice(0, 3) || [];
+                            console.log('Fallback: Extracted image URLs:', imageUrls);
+                        } else {
+                            const errorText = await imageResponse.text();
+                            console.error('Fallback: Unsplash API error:', imageResponse.status, errorText);
                         }
+                    } else {
+                        console.warn('Fallback: Unsplash API key not provided');
                     }
                 } catch (imgError) {
-                    console.warn('Failed to fetch images, proceeding without:', imgError);
+                    console.error('Fallback: Failed to fetch images from Unsplash:', imgError);
                 }
                 
                 // Fallback to placeholder images if no images found
