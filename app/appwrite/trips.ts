@@ -55,6 +55,7 @@ export const getAllTrips = async (limit: number = 10, offset: number = 0) => {
             databaseId: appwriteConfig.databaseID,
             tableId: appwriteConfig.tripTableId,
             queries: [
+                Query.select(['$id', '$createdAt', 'tripDetail', 'imageUrls']),
                 Query.limit(limit),
                 Query.offset(offset),
                 Query.orderDesc('createdAt')

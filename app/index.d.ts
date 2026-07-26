@@ -49,7 +49,7 @@ declare interface DayPlan {
   activities: Activity[];
 }
 
-declare interface Location {
+declare interface TripLocation {
   city: string;
   coordinates: [number, number];
   openStreetMap: string;
@@ -70,7 +70,7 @@ declare interface Trip {
   itinerary: DayPlan[];
   bestTimeToVisit: string[];
   weatherInfo: string[];
-  location: Location;
+  location: TripLocation;
   payment_link: string;
 }
 
@@ -155,4 +155,63 @@ declare interface TripFormData {
   budget: string;
   duration: number;
   groupType: string;
+}
+
+declare interface PlannerInput {
+  country: string;
+  startDate: string;
+  endDate: string;
+  numberOfDays: number;
+  travelStyle: string;
+  interests: string;
+  budget: string;
+  groupType: string;
+}
+
+declare interface PlannerPlace {
+  name: string;
+  region: string;
+  description: string;
+  whyNow: string;
+  bestFor: string[];
+  suggestedDays: number;
+  topSights: string[];
+}
+
+declare interface DestinationAgentResult {
+  season: string;
+  weather: string;
+  places: PlannerPlace[];
+  notes: string[];
+}
+
+declare interface ItineraryDay {
+  day: number;
+  date: string;
+  location: string;
+  morning: string;
+  afternoon: string;
+  evening: string;
+  accommodation: string;
+  estimatedCost: number;
+  tips: string[];
+}
+
+declare interface ItineraryAgentResult {
+  overview: string;
+  itinerary: ItineraryDay[];
+  tips: string[];
+}
+
+declare interface BudgetLine {
+  category: string;
+  amount: number;
+  note: string;
+}
+
+declare interface BudgetAgentResult {
+  estimatedCost: number;
+  currency: string;
+  breakdown: BudgetLine[];
+  savingTips: string[];
 }

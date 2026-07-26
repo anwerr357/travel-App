@@ -48,9 +48,39 @@ export function parseMarkdownToJson(markdownText: string): unknown | null {
   return null;
 }
 
-export function parseTripData(tripData: any): Trip | null {
+export function normalizePrice(estimatedCost: any, duration: number = 0): string {
+  const money = (value: number) => `$${Math.round(value).toLocaleString()}`;
+
+  if (typeof estimatedCost === "number" && Number.isFinite(estimatedCost)) {
+    return money(estimatedCost);
+  }
+
+  if (typeof estimatedCost === "string" && estimatedCost.trim()) {
+    const trimmed = estimatedCost.trim();
+    return /^[$€£]/.test(trimmed) ? trimmed : `$${trimmed}`;
+  }
+
+  if (estimatedCost && typeof estimatedCost === "object") {
+    const numbers = Object.entries(estimatedCost).filter(
+      ([, value]) => typeof value === "number" && Number.isFinite(value)
+    ) as [string, number][];
+
+    const preferred = numbers.find(([key]) => /usd/i.test(key)) || numbers[0];
+    if (preferred) return money(preferred[1]);
+  }
+
+  return duration > 0 ? money(duration * 100) : "Price TBD";
+}
+
+function normalizeInterests(interests: any): string {
+  if (typeof interests === "string") return interests;
+  if (Array.isArray(interests)) return interests.filter(Boolean).join(", ");
+  return "";
+}
+
+export function parseTripData(tripData: any): Omit<Trip, "id"> | null {
   if (!tripData) return null;
-  
+
   if (typeof tripData === 'string') {
     try {
       tripData = JSON.parse(tripData);
@@ -59,20 +89,18 @@ export function parseTripData(tripData: any): Trip | null {
       return null;
     }
   }
-  
+
   // Transform AI response structure to expected Trip structure
   try {
     return {
-      id: tripData.id || '',
       name: tripData.destination || '',
       country: tripData.destination || '',
       duration: tripData.duration || 0,
       travelStyle: tripData.travelStyle || '',
       groupType: tripData.groupType || '',
       budget: tripData.budget || '',
-      interests: typeof tripData.interests === 'string' ? tripData.interests : (tripData.interests || []).join(', '),
-      estimatedPrice: tripData.estimatedCost?.totalApproxUSD_per_couple || 
-                      `$${tripData.estimatedCost || (tripData.duration * 100)}`,
+      interests: normalizeInterests(tripData.interests),
+      estimatedPrice: normalizePrice(tripData.estimatedCost, tripData.duration),
       description: tripData.overview || '',
       itinerary: transformItinerary(tripData.itinerary || []),
       bestTimeToVisit: tripData.tips?.filter((tip: any) => 
